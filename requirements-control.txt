@@ -1,0 +1,3 @@
+# Official controller tests/API only. CARLA server is installed separately.
+carla==0.9.16
+numpy==1.26.4

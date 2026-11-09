@@ -5,14 +5,16 @@
 **처음에는 아래 세 폴더 중 본인 담당 폴더만 찾으면 됩니다.** GitHub에서 `src` → `pbb` → 담당 폴더 순서로 클릭하세요.
 `src`는 소스 코드, `pbb`는 이 프로젝트의 Python 묶음 이름입니다.
 
-| 내가 만드는 코드 | 올릴 폴더 | 파일 이름 예시 — 아직 만들어진 파일은 아닙니다 |
+| 내가 만드는 코드 | 올릴 폴더 | 파일 |
 | --- | --- | --- |
-| 카메라 영상에서 차선·장애물 찾기 → **인지** | [src/pbb/perception](src/pbb/perception/) | `lane_detector.py`, `obstacle_detector.py` |
-| 인지 결과를 보고 정지·감속·경로 결정 → **판단** | [src/pbb/planning](src/pbb/planning/) | `decision.py`, `speed_planner.py` |
-| 목표에 맞춰 핸들·가속·브레이크 값 계산 → **제어** | [src/pbb/control](src/pbb/control/) | `steering_controller.py`, `speed_controller.py` |
+| 카메라 영상에서 차선·장애물 찾기 → **인지** | [src/pbb/perception](src/pbb/perception/) | 예시: `lane_detector.py` — 아직 없음 |
+| 인지 결과를 보고 정지·감속·경로 결정 → **판단** | [src/pbb/planning](src/pbb/planning/) | 예시: `decision.py` — 이 폴더에는 아직 없음 |
+| 목표에 맞춰 핸들·가속·브레이크 값 계산 → **제어** | [src/pbb/control](src/pbb/control/) | **[controller.py](src/pbb/control/controller.py) — 공식 PID 연결·설정** |
 
-**현재 `main`의 위 폴더에는 설명서와 Python 폴더 표시 파일만 있습니다. 완성된 주행 코드가 들어 있는 상태는 아닙니다.**
-인지 → 판단 → 제어를 나눠 개발할 자리를 먼저 만들어 둔 것입니다.
+**기본 주행은 테스트했던 CARLA 공식 오픈소스 `BehaviorAgent`와 `VehiclePIDController`를 사용합니다.**
+`control/controller.py`는 공식 제어기를 불러오는 진입점이며, 계산 원본은
+[third_party/carla_agents/agents/navigation/controller.py](third_party/carla_agents/agents/navigation/controller.py)에 있습니다.
+인지·판단 폴더의 프로젝트용 연결 코드와 새 구조 전체의 주행 연결은 아직 준비 중입니다.
 예: 인지가 “빨간불”을 알아냄 → 판단이 “멈춰야 함”을 결정 → 제어가 “제동 값”을 계산합니다.
 
 GitHub는 프로젝트 파일을 저장하고 **누가 무엇을 바꿨는지 기록하는 공동 작업 공간**입니다.
@@ -29,11 +31,13 @@ PBB/
 ├── src/pbb/
 │   ├── perception/           ← 인지 코드를 넣는 곳
 │   ├── planning/             ← 판단 코드를 넣는 곳
-│   ├── control/              ← 제어 코드를 넣는 곳
+│   ├── control/controller.py ← 공식 PID 제어기 연결·설정
 │   ├── interfaces/           ← 서로 주고받는 데이터 약속
 │   ├── runtime/              ← 세 영역을 순서대로 실행하는 연결 코드
 │   └── adapters/             ← CARLA 등 외부 프로그램과 연결
 ├── tests/                    ← 코드가 맞게 동작하는지 확인하는 코드
+├── third_party/carla_agents/ ← 테스트에 사용한 공식 오픈소스 원본
+├── requirements-control.txt ← 공식 제어기에 필요한 패키지 목록
 ├── Docs/Project Plan/        ← 프로젝트 계획서
 ├── docs/architecture.md      ← 코드 분리·연결 방법 설명
 ├── CONTRIBUTING.md           ← 작업·업로드·병합 절차
@@ -93,6 +97,8 @@ PBB/
 | `.github/pull_request_template.md` | 코드를 합쳐 달라고 요청할 때 쓰는 설명 양식 |
 | `tests/test_architecture.py` | 인지·판단·제어가 다른 영역의 내부 코드를 직접 가져오지 않는지 확인 |
 | `CONTRIBUTING.md` | 팀의 작업 시작·업로드·병합 방법 |
+| `requirements-control.txt` | 공식 PID 제어기를 쓰는 데 필요한 CARLA Python API와 NumPy 버전 |
+| `third_party/carla_agents/` | 공식 BehaviorAgent·경로 계획·PID 제어 원본과 라이선스. 자체 코드와 구분해 보관 |
 
 이 파일들은 협업을 위해 이미 준비했습니다. 기능 하나를 추가할 때마다 새로 만들 필요는 없습니다.
 자동 검사가 통과해도 CARLA 주행 성능까지 검증됐다는 뜻은 아닙니다.
@@ -139,7 +145,7 @@ ZIP으로 프로젝트 전체를 묶기보다 변경한 원본 `.py`와 설명 �
 
 ### 8. 다른 브랜치에서 파일이 더 보이는 이유
 
-작성 시점(2026-11-09)에 `main`에는 협업 구조가 있고, 아래 코드는 별도 작업 브랜치에 있습니다.
+작성 시점(2026-11-09)에 `main`에는 협업 구조·공식 오픈소스 원본·제어 진입점이 있고, 아래 실행 코드는 별도 작업 브랜치에 있습니다.
 GitHub 왼쪽 위의 브랜치 선택이 달라지면 보이는 파일도 달라집니다. 아래 링크는 해당 브랜치로 바로 이동합니다.
 
 - [`ye`의 판단 코드](https://github.com/leey00jay/PBB/blob/ye/decision/decision.py): 기존 `decision.py`. 통합할 때 목적지는 `src/pbb/planning/`입니다.
@@ -183,7 +189,9 @@ CARLA 예제 안의 파일은 다음 역할입니다. 실행 준비는 그 폴�
 ---
 
 인지·판단·제어를 독립적으로 개발하고 `main`에서 통합하는 프로젝트입니다.
-현재 저장소는 협업 구조와 자동 검사부터 준비한 상태입니다. 실제 알고리즘과 CARLA 실행 코드는 별도 작업 PR로 추가합니다.
+협업 구조와 자동 검사를 갖추었고, `src/pbb/control/controller.py`에서 공식 CARLA PID 제어기를 사용합니다.
+기존 주행 검증은 공식 BehaviorAgent에 영상 보조 조향을 연결한 구성으로 수행했습니다.
+자체 인지 코드와 실행 연결을 역할별 폴더에 정리하는 작업은 후속 단계입니다.
 
 ## 코드 위치
 
@@ -216,14 +224,16 @@ main → codex/control/speed-controller  → PR → main
 
 ## 검사 실행
 
-Python 3.10 이상에서 저장소 최상위 폴더에서 실행합니다. 기본 검사에는 추가 패키지가 필요하지 않습니다.
+Python 3.10 또는 3.12의 가상환경에서 저장소 최상위 폴더 기준으로 실행합니다.
+CARLA Python API를 설치하지만 검사 중 시뮬레이터 서버를 실행하지는 않습니다.
 
 ```bash
-PYTHONPATH=src python3 -m unittest discover -s tests -v
-python3 -m compileall -q src tests
+python3 -m pip install -r requirements-control.txt
+PYTHONPATH=src:third_party/carla_agents python3 -m unittest discover -s tests -v
+python3 -m compileall -q src tests third_party/carla_agents
 ```
 
-GitHub Actions도 PR마다 같은 검사를 실행합니다. 현재 검사는 모듈 간 import 경계를 확인하며,
+GitHub Actions도 PR마다 같은 검사를 실행합니다. 모듈 간 import 경계, 공식 PID의 동작, 원본 코드 해시를 확인합니다.
 주행 성능 검증을 대신하지 않습니다. 알고리즘을 추가할 때 해당 역할의 동작 테스트와 통합 테스트를 함께 추가합니다.
 
 ## 기존 자료

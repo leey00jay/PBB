@@ -16,6 +16,11 @@
 `adapters`는 외부 데이터와 공통 데이터 간 변환을 담당하며 알고리즘을 호출하지 않습니다.
 `runtime`은 모든 영역을 연결할 수 있습니다.
 
+현재 제어 기준 구현은 CARLA 공식 `VehiclePIDController`입니다. `control/controller.py`는
+`third_party/carla_agents`의 공식 클래스를 그대로 가져오므로 CARLA 차량·경로점·명령 자료형을 사용합니다.
+이는 기존 오픈소스와의 연결을 위한 현재 API이며, 아래의 프로젝트 공통 메시지 형식은 아직 정의 전입니다.
+공통 형식을 도입할 때 CARLA API와의 변환 위치를 함께 정합니다.
+
 ## 공통 규격을 먼저 합의
 
 구현 전에 `src/pbb/interfaces/`에서 데이터 클래스를 정의합니다.
@@ -35,12 +40,16 @@
 
 ## 기존 코드 이관 순서
 
-현재 `main`에는 알고리즘이 아직 올라와 있지 않습니다. 로컬 CARLA 코드를 옮길 때 다음 순서를 권장합니다.
+`main`에 테스트했던 CARLA 0.9.16의 공식 원본을 `third_party/carla_agents`로 보존했습니다.
+`src/pbb/control/controller.py`는 공식 `VehiclePIDController`를 재사용하며 이전 주행 시험의 설정을 제공합니다.
+공식 내부 연결은 `BehaviorAgent → LocalPlanner → VehiclePIDController`입니다.
+기존 실행 브랜치는 같은 공식 코드를 직접 사용하므로 새 진입점을 붙이기 위해 제어기를 중복 생성하지 않습니다.
+기존 실행 코드의 프로젝트용 부분을 정리할 때 다음 순서를 권장합니다.
 
 1. 실행 환경과 기존 테스트 결과를 기록합니다.
 2. 인지 결과·판단 목표·제어 명령의 공통 형식을 먼저 정의합니다.
 3. `road_boundary_recovery`의 검출 로직은 `perception`으로 옮기고 기존 입력에 대한 결과를 비교합니다.
-4. `boundary_controller.py`의 목표 속도 결정은 `planning`, 조향·종방향 제어는 `control`로 분리합니다.
+4. 판단·기본 제어는 공식 BehaviorAgent와 PID를 유지합니다. `boundary_controller.py`의 영상 보조 조향은 별도 보조 기능으로 구분하며, 이전 직진 시험용 `target_speed`·`longitudinal`로 공식 에이전트를 대체하지 않습니다.
 5. `open_source_autonomy.py` 같은 실행 스크립트의 루프는 `runtime`, CARLA 입출력은 `adapters`로 옮깁니다.
 6. 기존 진입점은 필요한 동안 호환용으로 남기고, 시나리오 회귀 테스트를 통과한 뒤 정리합니다.
 
@@ -64,3 +73,7 @@ import할 때 예제 출력이 실행되지 않도록 예제 실행부를 분리
 절대 import와 상대 import를 모두 검사하며, 핵심 모듈에서 동적 import는 사용하지 않습니다.
 이 검사는 데이터 의미·지연·차량 동작을 보장하지 않습니다.
 실제 구현을 추가할 때 단위 테스트와 `tests/integration/`의 연결 테스트를 함께 작성해야 합니다.
+
+`tests/control/test_controller.py`는 실제 공식 PID와 CARLA Python API 자료형으로
+가속·감속·조향 방향·조향 변화 제한·속도 단위(km/h)를 확인하고 공식 원본 해시를 검사합니다.
+이는 시뮬레이터 서버 없이 수행한 검사이며 전체 주행을 새로 검증한 결과는 아닙니다.

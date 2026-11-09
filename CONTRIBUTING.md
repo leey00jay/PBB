@@ -36,9 +36,11 @@ git switch -c codex/perception/lane-detection
 
 ## PR 올리기
 
+처음 검사할 때는 Python 가상환경에서 `python3 -m pip install -r requirements-control.txt`로 의존성을 준비합니다.
+
 ```bash
-PYTHONPATH=src python3 -m unittest discover -s tests -v
-python3 -m compileall -q src tests
+PYTHONPATH=src:third_party/carla_agents python3 -m unittest discover -s tests -v
+python3 -m compileall -q src tests third_party/carla_agents
 git diff --check
 git status --short
 # 실제 수정한 파일만 지정합니다.
@@ -59,8 +61,8 @@ GitHub에서 base를 `main`으로 선택해 PR을 만들고, 변경 목적·공�
 git fetch origin
 git merge origin/main
 # 충돌이 있으면 수정 후 해당 파일을 git add하고 git commit합니다.
-PYTHONPATH=src python3 -m unittest discover -s tests -v
-python3 -m compileall -q src tests
+PYTHONPATH=src:third_party/carla_agents python3 -m unittest discover -s tests -v
+python3 -m compileall -q src tests third_party/carla_agents
 git push
 ```
 
