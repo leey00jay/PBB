@@ -1,0 +1,278 @@
+{
+  "map": "Carla/Maps/Town02_Opt",
+  "carla_version": "0.9.16",
+  "controller": "boundary_controller.py; CARLA autopilot OFF",
+  "vision_detector_sha256": "4ba0fc723e15332e6c388db3129d0ed9fb577dddc08bd76341688b535b0b48a6",
+  "traffic_signal_source": "CARLA API; controlled red-to-green scenario",
+  "map_assist_enabled": true,
+  "map_assist_policy": "junction or invalid/uncalibrated visual corridor",
+  "evaluation_reference": "CARLA map route center; moving speed > 1 km/h; junction excluded from lane metrics",
+  "lane_center_test_threshold_m": 0.5,
+  "cycles": 3,
+  "camera": {
+    "width": 1280,
+    "height": 720,
+    "fov": 90,
+    "mount_x": 1.5,
+    "mount_z": 1.6
+  },
+  "wheelbase_m": 3.0046392464811724,
+  "max_steer_deg": 69.99999237060547,
+  "fixed_delta_seconds": 0.05,
+  "cruise_kmh": 12,
+  "signal_id": 18,
+  "manual_driving_inputs": 0,
+  "trials_completed": 3,
+  "trials": [
+    {
+      "trial": 1,
+      "initial_offset_m": 0.0,
+      "outcome": "route_complete",
+      "frames": 578,
+      "moving_frames": 516,
+      "red_stop_confirmed": true,
+      "green_departure_confirmed": true,
+      "green_departure_delay_s": 0.6,
+      "red_front_crossed_stop_reference": false,
+      "stop_front_gap_m": 2.223,
+      "moving_steering_sources": {
+        "VISION": 339,
+        "VISION_HELD": 3,
+        "MAP_ASSIST_MISSING": 59,
+        "MAP_ASSIST_JUNCTION": 115
+      },
+      "vision_steering_percent_moving": 66.28,
+      "nonjunction_lane_abs_mean_m": 0.0399,
+      "nonjunction_lane_abs_p95_m": 0.0635,
+      "nonjunction_lane_abs_max_m": 0.0645,
+      "vision_nonjunction_abs_mean_m": 0.0414,
+      "nonjunction_vehicle_outside_lane_frames": 0,
+      "nonjunction_within_0_5m_percent": 100.0,
+      "manual_driving_inputs": 0,
+      "events": [
+        {
+          "type": "steering_mode",
+          "time_s": 0.0,
+          "source": "MAP_ASSIST_MISSING"
+        },
+        {
+          "type": "steering_mode",
+          "time_s": 0.2,
+          "source": "VISION"
+        },
+        {
+          "type": "red_stop_confirmed",
+          "time_s": 13.15000019595027,
+          "front_gap_m": 2.223,
+          "hold_s": 2.0,
+          "frame_id": 29572,
+          "video_frame": 263
+        },
+        {
+          "type": "green_departure",
+          "time_s": 13.800000205636024,
+          "delay_s": 0.6,
+          "frame_id": 29585,
+          "video_frame": 276
+        },
+        {
+          "type": "steering_mode",
+          "time_s": 15.55,
+          "source": "VISION_HELD"
+        },
+        {
+          "type": "steering_mode",
+          "time_s": 15.7,
+          "source": "MAP_ASSIST_MISSING"
+        },
+        {
+          "type": "steering_mode",
+          "time_s": 18.65,
+          "source": "MAP_ASSIST_JUNCTION"
+        },
+        {
+          "type": "steering_mode",
+          "time_s": 24.4,
+          "source": "VISION"
+        }
+      ],
+      "collisions": []
+    },
+    {
+      "trial": 2,
+      "initial_offset_m": -0.3,
+      "outcome": "route_complete",
+      "frames": 577,
+      "moving_frames": 515,
+      "red_stop_confirmed": true,
+      "green_departure_confirmed": true,
+      "green_departure_delay_s": 0.6,
+      "red_front_crossed_stop_reference": false,
+      "stop_front_gap_m": 2.297,
+      "moving_steering_sources": {
+        "VISION": 338,
+        "VISION_HELD": 3,
+        "MAP_ASSIST_MISSING": 60,
+        "MAP_ASSIST_JUNCTION": 114
+      },
+      "vision_steering_percent_moving": 66.21,
+      "nonjunction_lane_abs_mean_m": 0.0618,
+      "nonjunction_lane_abs_p95_m": 0.2328,
+      "nonjunction_lane_abs_max_m": 0.2994,
+      "vision_nonjunction_abs_mean_m": 0.0667,
+      "nonjunction_vehicle_outside_lane_frames": 0,
+      "nonjunction_within_0_5m_percent": 100.0,
+      "manual_driving_inputs": 0,
+      "events": [
+        {
+          "type": "steering_mode",
+          "time_s": 0.0,
+          "source": "MAP_ASSIST_MISSING"
+        },
+        {
+          "type": "steering_mode",
+          "time_s": 0.2,
+          "source": "VISION"
+        },
+        {
+          "type": "red_stop_confirmed",
+          "time_s": 13.050000194460154,
+          "front_gap_m": 2.297,
+          "hold_s": 2.0,
+          "frame_id": 30161,
+          "video_frame": 839
+        },
+        {
+          "type": "green_departure",
+          "time_s": 13.700000204145908,
+          "delay_s": 0.6,
+          "frame_id": 30174,
+          "video_frame": 852
+        },
+        {
+          "type": "steering_mode",
+          "time_s": 15.45,
+          "source": "VISION_HELD"
+        },
+        {
+          "type": "steering_mode",
+          "time_s": 15.6,
+          "source": "MAP_ASSIST_MISSING"
+        },
+        {
+          "type": "steering_mode",
+          "time_s": 18.6,
+          "source": "MAP_ASSIST_JUNCTION"
+        },
+        {
+          "type": "steering_mode",
+          "time_s": 24.3,
+          "source": "VISION"
+        }
+      ],
+      "collisions": []
+    },
+    {
+      "trial": 3,
+      "initial_offset_m": 0.3,
+      "outcome": "route_complete",
+      "frames": 578,
+      "moving_frames": 516,
+      "red_stop_confirmed": true,
+      "green_departure_confirmed": true,
+      "green_departure_delay_s": 0.6,
+      "red_front_crossed_stop_reference": false,
+      "stop_front_gap_m": 2.224,
+      "moving_steering_sources": {
+        "VISION": 339,
+        "VISION_HELD": 3,
+        "MAP_ASSIST_MISSING": 59,
+        "MAP_ASSIST_JUNCTION": 115
+      },
+      "vision_steering_percent_moving": 66.28,
+      "nonjunction_lane_abs_mean_m": 0.0784,
+      "nonjunction_lane_abs_p95_m": 0.2604,
+      "nonjunction_lane_abs_max_m": 0.2997,
+      "vision_nonjunction_abs_mean_m": 0.0859,
+      "nonjunction_vehicle_outside_lane_frames": 0,
+      "nonjunction_within_0_5m_percent": 100.0,
+      "manual_driving_inputs": 0,
+      "events": [
+        {
+          "type": "steering_mode",
+          "time_s": 0.0,
+          "source": "MAP_ASSIST_MISSING"
+        },
+        {
+          "type": "steering_mode",
+          "time_s": 0.2,
+          "source": "VISION"
+        },
+        {
+          "type": "red_stop_confirmed",
+          "time_s": 13.15000019595027,
+          "front_gap_m": 2.224,
+          "hold_s": 2.0,
+          "frame_id": 30753,
+          "video_frame": 1418
+        },
+        {
+          "type": "green_departure",
+          "time_s": 13.800000205636024,
+          "delay_s": 0.6,
+          "frame_id": 30766,
+          "video_frame": 1431
+        },
+        {
+          "type": "steering_mode",
+          "time_s": 15.55,
+          "source": "VISION_HELD"
+        },
+        {
+          "type": "steering_mode",
+          "time_s": 15.7,
+          "source": "MAP_ASSIST_MISSING"
+        },
+        {
+          "type": "steering_mode",
+          "time_s": 18.65,
+          "source": "MAP_ASSIST_JUNCTION"
+        },
+        {
+          "type": "steering_mode",
+          "time_s": 24.4,
+          "source": "VISION"
+        }
+      ],
+      "collisions": []
+    }
+  ],
+  "overall": {
+    "outcome": "see_trials",
+    "frames": 1733,
+    "moving_frames": 1547,
+    "red_front_crossed_stop_reference": false,
+    "moving_steering_sources": {
+      "VISION": 1016,
+      "VISION_HELD": 9,
+      "MAP_ASSIST_MISSING": 178,
+      "MAP_ASSIST_JUNCTION": 344
+    },
+    "vision_steering_percent_moving": 66.26,
+    "nonjunction_lane_abs_mean_m": 0.0601,
+    "nonjunction_lane_abs_p95_m": 0.2153,
+    "nonjunction_lane_abs_max_m": 0.2997,
+    "vision_nonjunction_abs_mean_m": 0.0647,
+    "nonjunction_vehicle_outside_lane_frames": 0,
+    "nonjunction_within_0_5m_percent": 100.0,
+    "manual_driving_inputs": 0,
+    "red_stop_trials": 3,
+    "green_departure_trials": 3
+  },
+  "total_video_frames": 1733,
+  "wall_seconds": 70.49,
+  "error": null,
+  "cleanup_errors": {},
+  "collisions": [],
+  "all_trials_passed": true
+}

@@ -33,3 +33,7 @@ jobs:
         run: python -m unittest discover -s tests -v
       - name: Compile Python sources
         run: python -m compileall -q src tests
+      - name: CARLA example controller tests (no simulator required)
+        run: python -m unittest discover -s examples/carla_boundary -p 'test_*.py' -v
+      - name: Compile CARLA example
+        run: python -m compileall -q examples/carla_boundary

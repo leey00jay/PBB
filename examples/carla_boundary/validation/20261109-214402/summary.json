@@ -1,0 +1,124 @@
+{
+  "upstream": "CARLA BehaviorAgent 0.9.16",
+  "license": "MIT",
+  "source": "https://github.com/carla-simulator/carla/tree/0.9.16/PythonAPI/carla/agents",
+  "upstream_files_modified": false,
+  "map": "Carla/Maps/Town02_Opt",
+  "vehicle_id": 47,
+  "traffic_manager_autopilot": false,
+  "vision_steering_enabled": true,
+  "signals_and_obstacles": "CARLA world API, not camera-only perception",
+  "speed_limit_kmh": 15,
+  "fixed_delta_seconds": 0.05,
+  "record_seconds": 180.0,
+  "source_hashes": {
+    "open_source_autonomy.py": "669d5bb297cce1aeee0fbc0860ae4fa4da41dfd00e05566f0c1a201635e0f7c3",
+    "boundary_controller.py": "0ee3d0d28bf84f4bc559e3c05569716c60a13807e5fe42f024c0b4f687d89292",
+    "road_boundary_recovery/road_boundary_recovery.py": "4ba0fc723e15332e6c388db3129d0ed9fb577dddc08bd76341688b535b0b48a6"
+  },
+  "end_reason": "recording_window_complete_driving_continues",
+  "frames": 3601,
+  "elapsed_s": 180.00000268220901,
+  "travelled_m": 395.58,
+  "destinations_reached": 3,
+  "turns_completed": 3,
+  "steering_sources_moving": {
+    "BOUNDARY_VISION": 1016,
+    "BEHAVIOR_AGENT_BRAKE": 119,
+    "BEHAVIOR_AGENT_TURN": 1220,
+    "BOUNDARY_HELD": 15,
+    "BEHAVIOR_AGENT_NO_DETECTION": 26
+  },
+  "vision_percent_moving": 43.03,
+  "road_center_abs_mean_m": 0.0695,
+  "road_center_abs_p95_m": 0.1925,
+  "road_center_abs_max_m": 0.2652,
+  "vehicle_outside_lane_road_frames": 0,
+  "red_stops": 4,
+  "green_departures": 4,
+  "collisions": [],
+  "lane_crossing_events": [],
+  "events": [
+    {
+      "event": "red_stop",
+      "elapsed_s": 7.900000117719173,
+      "light_id": 18,
+      "video_frame": 158
+    },
+    {
+      "event": "green_departure",
+      "elapsed_s": 12.450000185519457,
+      "light_id": 18,
+      "delay_s": 0.35,
+      "video_frame": 249
+    },
+    {
+      "event": "turn_completed",
+      "elapsed_s": 26.400000393390656,
+      "heading_change_deg": 87.19794607162476
+    },
+    {
+      "event": "destination_reached",
+      "elapsed_s": 29.700000442564487
+    },
+    {
+      "event": "turn_completed",
+      "elapsed_s": 41.850000623613596,
+      "heading_change_deg": 84.34153935313225
+    },
+    {
+      "event": "red_stop",
+      "elapsed_s": 46.800000697374344,
+      "light_id": 21,
+      "video_frame": 936
+    },
+    {
+      "event": "green_departure",
+      "elapsed_s": 57.700000859797,
+      "light_id": 21,
+      "delay_s": 0.3,
+      "video_frame": 1154
+    },
+    {
+      "event": "destination_reached",
+      "elapsed_s": 58.75000087544322
+    },
+    {
+      "event": "red_stop",
+      "elapsed_s": 74.95000111684203,
+      "light_id": 23,
+      "video_frame": 1499
+    },
+    {
+      "event": "green_departure",
+      "elapsed_s": 87.95000131055713,
+      "light_id": 23,
+      "delay_s": 0.35,
+      "video_frame": 1759
+    },
+    {
+      "event": "turn_completed",
+      "elapsed_s": 100.20000149309635,
+      "heading_change_deg": 86.41112518310547
+    },
+    {
+      "event": "destination_reached",
+      "elapsed_s": 105.5000015720725
+    },
+    {
+      "event": "red_stop",
+      "elapsed_s": 136.05000202730298,
+      "light_id": 25,
+      "video_frame": 2721
+    },
+    {
+      "event": "green_departure",
+      "elapsed_s": 163.40000243484974,
+      "light_id": 25,
+      "delay_s": 0.3,
+      "video_frame": 3268
+    }
+  ],
+  "error": null,
+  "manual_driving_inputs": 0
+}

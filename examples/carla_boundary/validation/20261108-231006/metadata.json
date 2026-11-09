@@ -1,0 +1,25 @@
+{
+  "map": "Carla/Maps/Town02_Opt",
+  "carla_version": "0.9.16",
+  "controller": "boundary_controller.py; CARLA autopilot OFF",
+  "vision_detector_sha256": "4ba0fc723e15332e6c388db3129d0ed9fb577dddc08bd76341688b535b0b48a6",
+  "traffic_signal_source": "CARLA API; controlled red-to-green scenario",
+  "map_assist_enabled": true,
+  "map_assist_policy": "junction or invalid/uncalibrated visual corridor",
+  "evaluation_reference": "CARLA map route center; moving speed > 1 km/h; junction excluded from lane metrics",
+  "lane_center_test_threshold_m": 0.5,
+  "cycles": 3,
+  "camera": {
+    "width": 1280,
+    "height": 720,
+    "fov": 90,
+    "mount_x": 1.5,
+    "mount_z": 1.6
+  },
+  "wheelbase_m": 3.0046392464811724,
+  "max_steer_deg": 69.99999237060547,
+  "fixed_delta_seconds": 0.05,
+  "cruise_kmh": 12,
+  "signal_id": 18,
+  "manual_driving_inputs": 0
+}
