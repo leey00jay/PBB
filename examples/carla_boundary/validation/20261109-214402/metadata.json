@@ -1,0 +1,19 @@
+{
+  "upstream": "CARLA BehaviorAgent 0.9.16",
+  "license": "MIT",
+  "source": "https://github.com/carla-simulator/carla/tree/0.9.16/PythonAPI/carla/agents",
+  "upstream_files_modified": false,
+  "map": "Carla/Maps/Town02_Opt",
+  "vehicle_id": 47,
+  "traffic_manager_autopilot": false,
+  "vision_steering_enabled": true,
+  "signals_and_obstacles": "CARLA world API, not camera-only perception",
+  "speed_limit_kmh": 15,
+  "fixed_delta_seconds": 0.05,
+  "record_seconds": 180.0,
+  "source_hashes": {
+    "open_source_autonomy.py": "669d5bb297cce1aeee0fbc0860ae4fa4da41dfd00e05566f0c1a201635e0f7c3",
+    "boundary_controller.py": "0ee3d0d28bf84f4bc559e3c05569716c60a13807e5fe42f024c0b4f687d89292",
+    "road_boundary_recovery/road_boundary_recovery.py": "4ba0fc723e15332e6c388db3129d0ed9fb577dddc08bd76341688b535b0b48a6"
+  }
+}

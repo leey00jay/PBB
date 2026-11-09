@@ -1,0 +1,29 @@
+{
+  "video_frames": 1733,
+  "sensor_timestamps_aligned": true,
+  "trials": [
+    {
+      "trial": 1,
+      "initial_error_m": -0.0,
+      "error_after_5s_m": 0.06369315118062957,
+      "restarted_while_red_after_stop": false
+    },
+    {
+      "trial": 2,
+      "initial_error_m": -0.2999999955422368,
+      "error_after_5s_m": 0.017458951824750102,
+      "restarted_while_red_after_stop": false
+    },
+    {
+      "trial": 3,
+      "initial_error_m": 0.2999995187062723,
+      "error_after_5s_m": 0.10497859378877195,
+      "restarted_while_red_after_stop": false
+    }
+  ],
+  "source_hashes": {
+    "boundary_controller.py": "0ee3d0d28bf84f4bc559e3c05569716c60a13807e5fe42f024c0b4f687d89292",
+    "autonomous_boundary_drive.py": "ff22e198067296666584b145649ceb61bbbc67d956ccfbca17b549fa70df0e58",
+    "road_boundary_recovery/road_boundary_recovery.py": "4ba0fc723e15332e6c388db3129d0ed9fb577dddc08bd76341688b535b0b48a6"
+  }
+}

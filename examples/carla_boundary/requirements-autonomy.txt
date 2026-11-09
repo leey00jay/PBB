@@ -1,0 +1,3 @@
+# Installed into .autonomy-deps; the system provides numpy<2 and OpenCV.
+networkx==3.4.2
+shapely==2.0.7

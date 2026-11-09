@@ -1,0 +1,10 @@
+.opensource-autonomy.lock
+carla-runs/
+carla-captures/
+opensource-runs/
+autonomous-tests/
+boundary-tests/
+*.mp4
+*.avi
+road_boundary_recovery/boundary_output/
+road_boundary_recovery/result_preview/

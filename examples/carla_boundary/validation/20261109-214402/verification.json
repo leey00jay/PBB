@@ -1,0 +1,21 @@
+{
+  "checks": {
+    "video_log_summary_frame_counts_match": true,
+    "consecutive_camera_frame_ids": true,
+    "sensor_timestamps_20hz": true,
+    "upstream_hashes_unchanged": true,
+    "tested_code_matches_current_files": true,
+    "red_hazard_never_accelerates": true,
+    "red_stop_and_green_departure_observed": true,
+    "multiple_turns_observed": true,
+    "boundary_actually_changes_steering": true,
+    "no_collision": true,
+    "vehicle_footprint_inside_lane_outside_junctions": true,
+    "no_runtime_error": true
+  },
+  "passed": true,
+  "video_frames": 3601,
+  "vision_changes_steering_frames": 1047,
+  "red_hazard_frames": 1234,
+  "mean_road_error_recomputed_m": 0.06945051030270127
+}

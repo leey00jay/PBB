@@ -1,0 +1,37 @@
+오픈소스 자율주행 실행 검증 — 20261109-214402
+자동 검사: 통과
+CARLA 공식 BehaviorAgent 0.9.16 (MIT) 원본을 그대로 사용하고 별도 통합 클래스로 설정.
+자연 신호 주기에서 실행. 시험 중 신호 색을 강제로 바꾸지 않음.
+기록 180.0초 / 3601프레임 / 거리 395.58m.
+빨간불 정지 4회 / 초록불 출발 4회 / 출발 지연 [0.35, 0.3, 0.35, 0.3]초.
+목적지 도달 3회 / 교차로 회전 3회.
+일반 차로 중심 절대오차: 평균 6.95cm, 95백분위 19.25cm, 최대 26.52cm.
+차로 통계는 속도 1km/h 초과, 지도상 교차로 바깥 프레임에서 계산. 곡선 도로 포함.
+차량 영역이 차로 폭을 벗어난 일반 도로 프레임 0개.
+충돌 0회 / 차선 침범 센서 이벤트 0회 / 수동 운전 0회.
+이동 중 첨부 검출값 기반 조향 43.03% (최대 0.2초 유지 추정 포함).
+오픈소스 조향과 다른 영상 조향이 실제 적용된 프레임 1047개.
+
+자동 검증 항목:
+PASS: video_log_summary_frame_counts_match
+PASS: consecutive_camera_frame_ids
+PASS: sensor_timestamps_20hz
+PASS: upstream_hashes_unchanged
+PASS: tested_code_matches_current_files
+PASS: red_hazard_never_accelerates
+PASS: red_stop_and_green_departure_observed
+PASS: multiple_turns_observed
+PASS: boundary_actually_changes_steering
+PASS: no_collision
+PASS: vehicle_footprint_inside_lane_outside_junctions
+PASS: no_runtime_error
+
+범위와 해석:
+신호 상태·경로·주변 객체는 CARLA 월드/지도 API를 사용함. 카메라만으로 모든 것을 인식하는 자율주행은 아님.
+첨부 카메라 검출은 적합한 직선 구간의 조향에 실제 사용. 회전·검출 누락·제동은 BehaviorAgent 담당.
+Town02_Opt, 낮, 저속, 다른 차량/보행자 없는 조건. 장애물 회피·야간·악천후·실차 성능은 이 기록으로 검증하지 않음.
+정지 횟수는 빨간불 영향 구간에서 속도 0.36km/h 미만을 1초 유지한 사건. 출발은 초록불 이후 1.8km/h 초과.
+회전 횟수는 교차로 진입·진출 방향이 35도 이상 변한 사건. 교차로가 아닌 곡선은 별도 가산하지 않음.
+검증 범위는 위 기록 구간. 녹화 종료 뒤에도 실행 창에서 자동주행은 계속됨.
+
+영상 drive.mp4 / 그래프 metrics.png / 상세 summary.json / 검증 verification.json / 프레임 로그 frames.jsonl
