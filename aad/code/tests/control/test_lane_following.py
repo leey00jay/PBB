@@ -12,7 +12,8 @@ class LaneFollowingTests(unittest.TestCase):
     def ready(self, detector, speed=2.0, target=20.0):
         follower = LaneFollower(detector)
         result = None
-        for _ in range(36):
+        # Allow the new acceleration ramp to reach the requested speed.
+        for _ in range(150):
             result = follower.update(detector.rgb, speed, target, 1/30)
         return follower, result
 
@@ -26,6 +27,17 @@ class LaneFollowingTests(unittest.TestCase):
         _, result = self.ready(SyntheticDetector(right=False))
         self.assertLess(np.max(np.abs(result['trajectory'][:,1])), .05)
         self.assertEqual(result['diagnostics']['target_kmh'], 20.0)
+
+    def test_speed_ramp_uses_actual_simulation_timestep(self):
+        detector = SyntheticDetector()
+        follower = LaneFollower(detector)
+        for _ in range(30):
+            follower.update(detector.rgb, 0, 20, 1/30)
+        first = follower.update(detector.rgb, 0, 20, 1/60)
+        second = follower.update(detector.rgb, 0, 20, 1/30)
+        # 1.5 m/s² over 1/60 s adds 0.09 km/h; 1/30 s adds 0.18.
+        self.assertAlmostEqual(first['diagnostics']['target_kmh'], .09)
+        self.assertAlmostEqual(second['diagnostics']['target_kmh'], .27)
 
     def test_both_missing_brakes_and_has_no_fake_path(self):
         _, result = self.ready(SyntheticDetector(left=False, right=False))

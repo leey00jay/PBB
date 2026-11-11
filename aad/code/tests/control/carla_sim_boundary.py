@@ -77,7 +77,20 @@ def send_control(vehicle, throttle, steer, brake,
 
 
 
-def main(use_lane_detector=False, ex=False, save_video=False, half_image=False):
+def main(use_lane_detector=False, ex=False, save_video=False, half_image=False, bag_path=None):
+    if bag_path is None:
+        return _run_simulation(use_lane_detector, ex, save_video, half_image)
+    if not use_lane_detector:
+        raise ValueError('--bag requires --ld so the front camera exists.')
+    from ...solutions.runtime.rosbag_recorder import ScreenBagRecorder
+    if bag_path == 'auto':
+        from datetime import datetime
+        bag_path = Path(__file__).resolve().parents[4] / 'bags' / datetime.now().strftime('town10_%Y%m%d_%H%M%S_%f')
+    with ScreenBagRecorder(bag_path) as recorder:
+        return _run_simulation(use_lane_detector, ex, save_video, half_image, recorder)
+
+
+def _run_simulation(use_lane_detector=False, ex=False, save_video=False, half_image=False, bag_recorder=None):
     # Imports
     if use_lane_detector and not ex:
         from ...solutions.perception.lane_detector import LaneDetector
@@ -129,7 +142,7 @@ def main(use_lane_detector=False, ex=False, save_video=False, half_image=False):
     boundary_tracker = BoundaryTracker()
     lane_follower = None
     last_lane_state = None
-    desired_speed_kmh = 20
+    desired_speed_kmh = 80
 
     try:
         m = world.get_map()
@@ -177,6 +190,22 @@ def main(use_lane_detector=False, ex=False, save_video=False, half_image=False):
                 attach_to=vehicle)
             actor_list.append(camera_windshield)
             sensors.append(camera_windshield)
+            if bag_recorder is not None:
+                bag_recorder.info['simulation'] = {
+                    'map': m.name,
+                    'carla_version': client.get_server_version(),
+                    'vehicle': vehicle.type_id,
+                    'spawn_index': 21,
+                    'fixed_delta_seconds': 1.0 / 30,
+                    'desired_speed_kmh': desired_speed_kmh,
+                    'front_camera': {
+                        'width': cg.image_width, 'height': cg.image_height,
+                        'horizontal_fov_deg': fov,
+                        'location_vehicle_m': [0.5, 0.0, cg.height],
+                        'pitch_deg': cg.pitch_deg,
+                        'intrinsic_matrix': cg.intrinsic_matrix.tolist(),
+                    },
+                }
             if not ex:
                 from ...solutions.runtime.lane_following import LaneFollower
                 lane_follower = LaneFollower(ld)
@@ -269,7 +298,8 @@ def main(use_lane_detector=False, ex=False, save_video=False, half_image=False):
                 
                 if lane_follower is not None:
                     texts += [f"target (km/h):       {target_kmh:.2f}",
-                              f"lane: {lane_state}"]
+                              f"lane: {lane_state}",
+                              f"throttle / brake:   {result['throttle']:.2f} / {result['brake']:.2f}"]
                 for it,t in enumerate(texts):
                     display.blit(
                         font.render(t, True, (0,0,0)), (image_rgb.shape[1]-380, 20+dy*it))
@@ -302,7 +332,17 @@ def main(use_lane_detector=False, ex=False, save_video=False, half_image=False):
                     display.blit(font.render(label, True, (255, 255, 255)),
                                  (810, 265 + 25 * row))
 
+                if bag_recorder is not None:
+                    display.blit(font.render(
+                        f"REC ROSBAG: {bag_recorder.frames + 1} frames", True,
+                        (255, 90, 90)), (810, 560))
+
                 pygame.display.flip()
+                if bag_recorder is not None:
+                    bag_recorder.write(
+                        pygame.surfarray.array3d(display).swapaxes(0, 1),
+                        carla_img_to_array(image_windshield),
+                        snapshot.timestamp.elapsed_seconds)
 
                 frame += 1
                 if save_video and frame > 0:
@@ -329,11 +369,14 @@ if __name__ == '__main__':
     parser.add_argument("--ld", action="store_true", help="Use reference trajectory from your LaneDetector class")
     parser.add_argument("--ex", action="store_true", help="Run student code")
     parser.add_argument("--vid", action="store_true", help="Save video after simulation")
+    parser.add_argument("--bag", nargs="?", const="auto", metavar="FOLDER", help="Save screen and raw front camera to a new ROS 2 bag folder. Requires --ld. With no folder, use PBB/bags/town10_<timestamp>.")
     parser.add_argument("--half_image", action="store_true", help="Pass images with (width, height) = (512,256) to lane detector instead of the default (1024,512). This will speed up the simulation, but might hurt accuracy.")
     args = parser.parse_args()
+    if args.bag is not None and not args.ld:
+        parser.error('--bag requires --ld to record the front camera.')
 
     try:
-        main(use_lane_detector = args.ld, ex = args.ex, save_video=args.vid, half_image=args.half_image)
+        main(use_lane_detector = args.ld, ex = args.ex, save_video=args.vid, half_image=args.half_image, bag_path=args.bag)
 
     except KeyboardInterrupt:
         print('\nCancelled by user. Bye!')

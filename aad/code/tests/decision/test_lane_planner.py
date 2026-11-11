@@ -16,7 +16,8 @@ class LanePlannerTests(unittest.TestCase):
     def ready(self, obs=None, target=20):
         obs = observation() if obs is None else obs
         planner = LanePlanner()
-        for _ in range(36):
+        # Include enough driving frames for the speed ramp to settle.
+        for _ in range(150):
             plan = planner.plan(obs, target)
         return planner, plan
 
@@ -31,10 +32,28 @@ class LanePlannerTests(unittest.TestCase):
 
     def test_single_boundary_uses_explicit_assumed_width_and_user_target(self):
         _, plan = self.ready(observation(left=None), target=8)
-        self.assertEqual(plan.status, 'RIGHT ONLY / WIDTH ASSUMED')
+        self.assertEqual(plan.status, 'RIGHT ONLY')
         self.assertEqual(plan.target_kmh, 8)
         self.assertEqual(plan.lane_width_m, 3.5)
         np.testing.assert_allclose(plan.trajectory[:, 1], 0)
+
+    def test_polynomial_curve_speed_decreases_for_tighter_turns(self):
+        planner = LanePlanner()
+        straight = planner.calculate_curve_speed(Polynomial([0.0]))
+        gentle = planner.calculate_curve_speed(Polynomial([0.0, 0.0, .005]))
+        tight = planner.calculate_curve_speed(Polynomial([0.0, 0.0, .02]))
+        self.assertEqual(straight, 80.0)
+        self.assertGreater(tight, 0.0)
+        self.assertLess(tight, gentle)
+        self.assertLess(gentle, straight)
+
+    def test_single_boundary_limits_high_requested_speed(self):
+        for obs in (observation(left=None), observation(right=None)):
+            planner = LanePlanner()
+            for _ in range(350):
+                plan = planner.plan(obs, 80.0)
+            self.assertTrue(plan.drive_allowed)
+            self.assertEqual(plan.target_kmh, 40.0)
 
     def test_camera_left_offset_becomes_vehicle_right_negative(self):
         _, plan = self.ready(observation(left=2.0, right=-1.5))

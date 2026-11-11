@@ -126,7 +126,7 @@ def main(use_lane_detector=False, ex=False, save_video=False, half_image=False):
     controller = PurePursuitPlusPID()
     lane_follower = None
     last_lane_state = None
-    desired_speed_kmh = 20
+    desired_speed_kmh = 80
 
     try:
         m = world.get_map()
@@ -260,7 +260,8 @@ def main(use_lane_detector=False, ex=False, save_video=False, half_image=False):
                 
                 if lane_follower is not None:
                     texts += [f"target (km/h):       {target_kmh:.2f}",
-                              f"lane: {lane_state}"]
+                              f"lane: {lane_state}",
+                              f"throttle / brake:   {result['throttle']:.2f} / {result['brake']:.2f}"]
                 for it,t in enumerate(texts):
                     display.blit(
                         font.render(t, True, (0,0,0)), (image_rgb.shape[1]-380, 20+dy*it))
