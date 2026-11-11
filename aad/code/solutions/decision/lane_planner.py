@@ -195,6 +195,15 @@ class LanePlanner:
             # 커브 속도 제한
             curve_speed = self.calculate_curve_speed(center)
 
+            # DEBUG: 속도 제한 원인 확인
+            print(
+                f"[SPEED DEBUG] "
+                f"desired={desired_speed_kmh:.1f} | "
+                f"curve={curve_speed:.1f} | "
+                f"before={target_kmh:.1f} | "
+                f"lane={status}"
+            )
+
             target_kmh = min(
                 target_kmh,
                 curve_speed
@@ -212,6 +221,13 @@ class LanePlanner:
         else:
             self.valid_frames = 0
             self.previous_center = None
+
+            # DEBUG: 경로 인식 실패
+            print(
+                f"[SPEED DEBUG] "
+                f"PATH INVALID | "
+                f"status={status}"
+            )
 
         # 주행 허용 판단
         if self.frames <= 30:
