@@ -3,6 +3,31 @@
 `pbb2`에서 직접 수정하고 실행한 CARLA 실습을 PBB로 옮긴 프로젝트입니다.
 2026-11-11 기준의 코드를 보관하며, 기존 PBB의 파일 구성은 이 구성으로 교체했습니다.
 
+## 파트별 작업 폴더
+
+| 파트 | 바로가기 | 담당 내용 |
+|---|---|---|
+| **인지** | [perception](aad/code/solutions/perception) | 영상 인식, 경계 곡선 추출, 카메라 좌표 계산 |
+| **판단** | [decision](aad/code/solutions/decision) | 중심 경로 생성, 목표 속도와 주행·정지 결정 |
+| **제어** | [control](aad/code/solutions/control) | 조향·액셀·브레이크 계산 |
+| 연결 | [runtime](aad/code/solutions/runtime) | 세 파트를 순서대로 호출하고 기존 CARLA 화면과 연결 |
+
+각 폴더의 README에 담당 파일·입출력·다음 작업·검사 명령이 있습니다.
+[공통 전달 형식](aad/code/solutions/interfaces.py) · [팀 작업 방법](CONTRIBUTING.md)
+
+```text
+aad/code/solutions/
+├── perception/       인지
+├── decision/         판단
+├── control/          제어
+├── runtime/          세 파트 연결
+├── interfaces.py     공통 데이터 형식
+└── lane_detection/   이전 import 호환 파일과 기존 모델
+```
+
+**현재는 이전 테스트 동작을 유지한 채 코드만 분리한 상태입니다.**
+새 도로 경계 검출기의 주행 연결과 속도 유지 개선은 각 파트에서 다음으로 진행할 작업입니다.
+
 ## 현재 구현 상태
 
 - CARLA 0.9.16 / Town10HD / Audi TT / 스폰 번호 21.
@@ -59,10 +84,13 @@ python -m code.tests.control.carla_sim --ld --half_image
 | `spawn_car.py` | 차량 생성과 관찰 시점 이동 실습 |
 | `aad/code/tests/control/carla_sim_boundary.py` | Town10 주행 + 새 도로 경계 분석 패널 |
 | `aad/code/tests/control/carla_sim.py` | 기존 차선 유지 주행 화면 |
-| `aad/code/solutions/lane_detection/lane_following.py` | 검출 결과 검사, 경로 생성, 속도·조향·정지 판단 |
-| `aad/code/solutions/lane_detection/lane_detector.py` | 기존 신경망 모델로 차선 검출 |
+| `aad/code/solutions/perception/lane_perception.py` | 검출 결과에서 유효한 차선 경계 추출 |
+| `aad/code/solutions/perception/lane_detector.py` | 기존 신경망 모델로 차선 검출 |
+| `aad/code/solutions/decision/lane_planner.py` | 경로 생성, 목표 속도·주행·정지 판단 |
+| `aad/code/solutions/control/vehicle_controller.py` | 현재 카메라 모드의 액셀·브레이크·조향 제한 |
+| `aad/code/solutions/runtime/lane_following.py` | 인지 → 판단 → 제어 연결 |
 | `aad/code/solutions/lane_detection/fastai_model.pth` | 기존 신경망 모델. 저장소에 포함 |
-| `aad/code/solutions/lane_detection/road_boundary_recovery.py` | 전달받은 새 도로 경계 검출 코드 |
+| `aad/code/solutions/perception/road_boundary_recovery.py` | 전달받은 새 도로 경계 검출 코드 |
 | `aad/code/solutions/control/pure_pursuit.py` | 경로를 따라갈 조향각 계산 |
 | `aad/code/tests/control/test_lane_following.py` | 차선 누락과 제어 오류 처리 검사. 실제 주행 설정 파일이 아님 |
 | `map.osm`, `my_map.xodr` | 이전에 만든 지도 실습 자료. Town10 실행에는 사용하지 않음 |
@@ -102,7 +130,7 @@ CARLA를 켜지 않고 실행할 수 있습니다.
 cd ~/Desktop/PBB
 source .venv/bin/activate
 cd aad
-python -m unittest code.tests.control.test_lane_following -v
+python -m unittest discover -s code/tests -t . -p 'test_*.py' -v
 ```
 
 이 검사는 제어 코드의 일부 동작을 확인합니다. 실제 Town10 전체 경로 주행 성능을 검증하는 테스트는 아닙니다.
@@ -117,7 +145,7 @@ python -m unittest code.tests.control.test_lane_following -v
 - 가져온 원본 커밋: `d13255a1ec71ed279033a1018893cfdecc26aaef`
 - 원본 저작자와 라이선스 안내: [aad/CONTRIBUTORS.md](aad/CONTRIBUTORS.md), [aad/LICENSE](aad/LICENSE). 원본은 CC BY 4.0으로 제공됩니다.
 - 주요 수정: Town10HD 설정, km/h 표시, 오차 소수점 표시, 차선 누락 시 경로 추정과 정지 처리, Pure Pursuit의 입력 경로 변경 방지, PyTorch 모델 로드 호환 처리, 새 경계 분석 패널 연결, 목표 속도 제한 변경.
-- `road_boundary_recovery.py`는 사용자가 제공한 `road_boundary_recovery_windows.zip`에서 가져왔으며, 해당 검출기 파일 자체는 전달받은 내용과 같습니다. 위 원본 AAD 저장소에서 가져온 파일은 아닙니다.
+- `perception/road_boundary_recovery.py`는 사용자가 제공한 `road_boundary_recovery_windows.zip`에서 가져왔으며, 해당 검출기 파일 자체는 전달받은 내용과 같습니다. 위 원본 AAD 저장소에서 가져온 파일은 아닙니다. 이전 `lane_detection` 경로에는 호환 import를 남겼습니다.
 - `map.osm`은 OpenStreetMap 내보내기 자료이고 `my_map.xodr`는 변환 자료입니다. 지도 데이터 출처: [© OpenStreetMap contributors](https://www.openstreetmap.org/copyright).
 
 이전 PBB의 파일은 교체됐지만 기존 Git 커밋 기록은 유지합니다.

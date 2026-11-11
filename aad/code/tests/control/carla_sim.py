@@ -79,8 +79,8 @@ def send_control(vehicle, throttle, steer, brake,
 def main(use_lane_detector=False, ex=False, save_video=False, half_image=False):
     # Imports
     if use_lane_detector and not ex:
-        from ...solutions.lane_detection.lane_detector import LaneDetector
-        from ...solutions.lane_detection.camera_geometry import CameraGeometry
+        from ...solutions.perception.lane_detector import LaneDetector
+        from ...solutions.perception.camera_geometry import CameraGeometry
     elif use_lane_detector and ex:
         from ...exercises.lane_detection.lane_detector import LaneDetector
         from ...exercises.lane_detection.camera_geometry import CameraGeometry    
@@ -175,7 +175,7 @@ def main(use_lane_detector=False, ex=False, save_video=False, half_image=False):
             actor_list.append(camera_windshield)
             sensors.append(camera_windshield)
             if not ex:
-                from ...solutions.lane_detection.lane_following import LaneFollower
+                from ...solutions.runtime.lane_following import LaneFollower
                 lane_follower = LaneFollower(ld)
                 wheels = vehicle.get_physics_control().wheels
                 lane_follower.max_steer_rad = np.deg2rad(wheels[0].max_steer_angle)
