@@ -21,7 +21,7 @@ class LaneFollower:
 
     def update(self, rgb, speed, desired_speed_kmh, dt):
         observation = self.perception.observe(rgb)
-        plan = self.decision.plan(observation, desired_speed_kmh)
+        plan = self.decision.plan(observation, desired_speed_kmh, dt=dt)
         command = self.control.update(plan, speed, dt)
         diagnostics = {'status': command.status,
                        'target_kmh': command.target_kmh,

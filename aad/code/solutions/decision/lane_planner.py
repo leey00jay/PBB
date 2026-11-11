@@ -30,8 +30,8 @@ class LanePlanner:
 
         x = np.linspace(3.0, 25.0, 45)
 
-        dy = np.polyder(center, 1)(x)
-        ddy = np.polyder(center, 2)(x)
+        dy = center.deriv(1)(x)
+        ddy = center.deriv(2)(x)
 
         curvature = np.abs(ddy) / (1.0 + dy ** 2) ** 1.5
 
