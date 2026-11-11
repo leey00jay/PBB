@@ -1,4 +1,4 @@
-"""차선 인식 및 인식 실패 원인 기록."""
+"""AI 차선 검출과 현재 영상의 점선을 이용한 보완 추적."""
 import os
 import numpy as np
 from pbb_common.models import LaneObservation
@@ -10,6 +10,10 @@ class LanePerception:
         self.last_diagnostics = {}
         self._debug_frames = 0
         self._debug_previous = None
+
+        self._tracks = {"left": None, "right": None}
+        self._ages = {"left": 0, "right": 0}
+        self._anchors = {"left": None, "right": None}
 
     def fit_boundary(self, probabilities):
         cg = self.detector
@@ -36,7 +40,7 @@ class LanePerception:
 
         x, y, weights = x[selected], y[selected], weights[selected]
 
-        # 가까운 차선이나 두꺼운 차선에 점이 몰리지 않도록 묶기
+        # 距離ごとの集約ではなく、道路上の0.5mごとに点をまとめる
         bins = np.floor(x * 2).astype(int)
         points = []
 
@@ -127,26 +131,233 @@ class LanePerception:
         self._fit_info["reason"] = "ok"
         return fit
 
+    def _recover(self, white, side):
+        prior = self._tracks[side]
+
+        if prior is None or self._ages[side] > 15:
+            return None, {"reason": "tracking_expired"}
+
+        x, y = self.detector.grid.T
+
+        selected = (
+            white[self.detector.cut_v:].ravel()
+            & (x >= 4)
+            & (x <= 16)
+            & (np.abs(y - prior(x)) < 0.45)
+        )
+
+        if selected.sum() < 60:
+            return None, {"reason": "too_few_paint_pixels"}
+
+        x, y = x[selected], y[selected]
+        bins = np.floor(x * 2).astype(int)
+
+        points = np.array([
+            (
+                np.median(x[bins == b]),
+                np.median(y[bins == b]),
+            )
+            for b in np.unique(bins)
+        ])
+
+        x, y = points.T
+
+        if len(x) < 4 or np.ptp(x) < 1.5 or x.min() > 12:
+            return None, {"reason": "paint_support_too_short"}
+
+        # 현재 영상의 점선으로 직전 차선을 작게 보정
+        residual = y - prior(x)
+        offset = float(np.median(residual))
+        keep = np.abs(residual - offset) < 0.12
+
+        if keep.sum() < 4 or np.ptp(x[keep]) < 1.5:
+            return None, {"reason": "paint_not_consistent"}
+
+        x, y = x[keep], y[keep]
+
+        correction = np.polynomial.Polynomial.fit(
+            x, y - prior(x), 1
+        ).convert()
+
+        slope = float(
+            np.clip(correction.coef[1], -0.05, 0.05)
+        )
+        reference = float(np.median(x))
+        shift = float(np.median(y - prior(x)))
+
+        candidate = prior + np.polynomial.Polynomial([
+            shift - slope * reference,
+            slope,
+        ])
+
+        checks = np.array([5.0, 8.0, 12.0])
+        anchor = self._anchors[side]
+
+        if (
+            not np.isfinite(candidate.coef).all()
+            or np.max(
+                np.abs(candidate(checks) - prior(checks))
+            ) > 0.4
+            or np.max(
+                np.abs(candidate(checks) - anchor(checks))
+            ) > 0.7
+            or np.mean(
+                np.abs(candidate(x) - y)
+            ) > 0.08
+        ):
+            return None, {"reason": "paint_tracking_rejected"}
+
+        return candidate, {
+            "reason": "ok",
+            "source": "paint_tracking",
+            "support_min_m": float(x.min()),
+            "support_max_m": float(x.max()),
+            "frames_since_model": self._ages[side],
+        }
+
     def observe(self, rgb):
+        import cv2
+
         _, left_mask, right_mask = self.detector.detect(rgb)
+
+        masks = {
+            "left": left_mask,
+            "right": right_mask,
+        }
+        fits = {}
+        infos = {}
+
+        for side in ("left", "right"):
+            fits[side] = self.fit_boundary(masks[side])
+            infos[side] = dict(
+                self._fit_info,
+                source="model",
+            )
+
+            if fits[side] is not None:
+                self._ages[side] = 0
+                self._anchors[side] = fits[side]
+            else:
+                self._ages[side] += 1
+
+        white = None
+
+        needs_recovery = any(
+            fits[side] is None
+            and self._tracks[side] is not None
+            and self._ages[side] <= 15
+            for side in fits
+        )
+
+        if needs_recovery:
+            gray = cv2.cvtColor(
+                rgb, cv2.COLOR_RGB2GRAY
+            )
+            saturation = cv2.cvtColor(
+                rgb, cv2.COLOR_RGB2HSV
+            )[:, :, 1]
+
+            top = cv2.morphologyEx(
+                gray,
+                cv2.MORPH_TOPHAT,
+                cv2.getStructuringElement(
+                    cv2.MORPH_RECT, (19, 3)
+                ),
+            )
+
+            white = (
+                (top > 20)
+                & (gray > 110)
+                & (saturation < 90)
+            )
+
+            for side in fits:
+                if fits[side] is None:
+                    recovered, info = self._recover(
+                        white, side
+                    )
+                    infos[side]["recovery_reason"] = (
+                        info["reason"]
+                    )
+
+                    if recovered is not None:
+                        fits[side] = recovered
+                        infos[side] = info
+
+        # 반대쪽 차선과 폭이 맞지 않는 보완 결과는 제외
+        if (
+            fits["left"] is not None
+            and fits["right"] is not None
+        ):
+            check = np.array([5.0, 8.0, 12.0])
+            widths = (
+                fits["left"](check)
+                - fits["right"](check)
+            )
+
+            valid_width = (
+                np.all(
+                    (widths >= 2.5)
+                    & (widths <= 4.5)
+                )
+                and np.ptp(widths) < 0.8
+            )
+
+            if not valid_width:
+                for side in fits:
+                    if (
+                        infos[side]["source"]
+                        == "paint_tracking"
+                    ):
+                        fits[side] = None
+                        infos[side]["reason"] = (
+                            "recovery_width_invalid"
+                        )
+
+        for side in fits:
+            if fits[side] is not None:
+                self._tracks[side] = fits[side]
+
+            elif self._ages[side] > 15:
+                self._tracks[side] = None
+                self._anchors[side] = None
 
         overlay = rgb.copy()
         overlay[left_mask > 0.5] = [0, 0, 255]
         overlay[right_mask > 0.5] = [255, 0, 0]
 
-        left = self.fit_boundary(left_mask)
-        left_info = dict(self._fit_info)
+        if white is not None:
+            x, y = self.detector.grid.T
 
-        right = self.fit_boundary(right_mask)
-        right_info = dict(self._fit_info)
+            for side in fits:
+                if (
+                    fits[side] is not None
+                    and infos[side]["source"]
+                    == "paint_tracking"
+                ):
+                    used = (
+                        white[self.detector.cut_v:].ravel()
+                        & (
+                            np.abs(y - fits[side](x))
+                            < 0.15
+                        )
+                    )
 
-        self.last_diagnostics = {
-            "left": left_info,
-            "right": right_info,
-        }
+                    region = overlay[self.detector.cut_v:]
+                    region[
+                        used.reshape(region.shape[:2])
+                    ] = [0, 255, 0]
 
+        self.last_diagnostics = infos
         self._debug_frames += 1
-        state = (left_info["reason"], right_info["reason"])
+
+        state = tuple(
+            (
+                infos[side]["reason"],
+                infos[side]["source"],
+            )
+            for side in fits
+        )
 
         if os.environ.get("PBB_PERCEPTION_DEBUG") == "1":
             if (
@@ -155,9 +366,14 @@ class LanePerception:
             ):
                 print(
                     f"[perception frame={self._debug_frames}] "
-                    f"left={left_info} right={right_info}",
+                    f"{infos}",
                     flush=True,
                 )
 
         self._debug_previous = state
-        return LaneObservation(left, right, overlay)
+
+        return LaneObservation(
+            fits["left"],
+            fits["right"],
+            overlay,
+        )
