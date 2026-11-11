@@ -1,0 +1,11 @@
+# Runtime used by the Town10 camera demo (Python 3.10).
+# Install the CARLA 0.9.16 wheel from the CARLA distribution separately.
+# For the demonstrated NVIDIA setup, install the cu128 torch wheels first;
+# see README.md. The base versions below also match installed +cu128 wheels.
+numpy==1.26.4
+pygame==2.6.1
+opencv-python==4.11.0.86
+torch==2.7.1
+torchvision==0.22.1
+fastseg==0.1.2
+geffnet==1.0.2

@@ -1,17 +1,25 @@
-__pycache__/
-*.py[cod]
+# Local Python environment and caches
 .venv/
 venv/
-.autonomy-deps/
-.carla-python/
+__pycache__/
+*.py[cod]
 .pytest_cache/
-.mypy_cache/
-.ruff_cache/
-.coverage
-htmlcov/
-build/
-dist/
+.ipynb_checkpoints/
 *.egg-info/
+
+# Local backups and generated output (original course data stays tracked)
+/backups/
+**/boundary_output/
+**/my_video.mp4
+*.log
+*.tmp
+*.part
+core
+core.*
+
+# Local editor settings and credentials
+.vscode/
+.idea/
 .env
 .env.*
 !.env.example
@@ -19,11 +27,3 @@ dist/
 *.key
 .DS_Store
 Thumbs.db
-*.log
-*.tmp
-*.part
-*~
-# Generated recordings and model artifacts belong in releases or external storage.
-/artifacts/
-/runs/
-/datasets/
