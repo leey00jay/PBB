@@ -1,4 +1,4 @@
-name: CARLA practice checks
+name: PBB ROS 2 checks
 
 on:
   push:
@@ -11,17 +11,21 @@ permissions:
   contents: read
 
 jobs:
-  lane-following:
-    runs-on: ubuntu-latest
+  ros2:
+    runs-on: ubuntu-22.04
+    container: ros:humble-ros-base
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-      - name: Install unit test dependency
-        run: python -m pip install numpy==1.26.4
-      - name: Check perception, decision, control, and runtime behavior
-        working-directory: aad
-        run: python -m unittest discover -s code/tests -t . -p 'test_*.py' -v
-      - name: Compile Python sources
-        run: python -m compileall -q start_carla.py connect_carla.py spawn_car.py aad/code
+      - name: Install build and CPU test dependencies
+        run: |
+          apt-get update
+          apt-get install -y python3-colcon-common-extensions python3-pytest python3-numpy ros-humble-rosidl-default-generators ros-humble-rosbag2-storage-default-plugins
+      - name: Build all ROS packages
+        run: ./build_ros2.sh
+      - name: Check algorithms, DDS, and current launch lifecycle
+        run: ./test_ros2.sh
+      - name: Compile maintained Python sources
+        run: python3 -m compileall -q src tests start_carla.py

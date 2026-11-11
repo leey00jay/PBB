@@ -10,6 +10,9 @@ __pycache__/
 # Local backups and generated output (original course data stays tracked)
 /backups/
 /bags/
+/build/
+/install/
+/log/
 **/boundary_output/
 **/my_video.mp4
 *.log

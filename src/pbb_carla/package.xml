@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>pbb_carla</name><version>0.2.0</version>
+  <description>PBB ROS 2 carla package.</description>
+  <maintainer email="leey00jay@users.noreply.github.com">PBB team</maintainer>
+  <license>CC-BY-4.0</license>
+  <buildtool_depend>ament_python</buildtool_depend>
+  <exec_depend>pbb_common</exec_depend>
+  <exec_depend>pbb_interfaces</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>rosgraph_msgs</exec_depend>
+  <exec_depend>builtin_interfaces</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>python3-opencv</exec_depend>
+  <test_depend>python3-pytest</test_depend>
+  <export><build_type>ament_python</build_type></export>
+</package>
