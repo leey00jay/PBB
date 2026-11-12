@@ -35,15 +35,16 @@ class LaneFollowingTests(unittest.TestCase):
             follower.update(detector.rgb, 0, 20, 1/30)
         first = follower.update(detector.rgb, 0, 20, 1/60)
         second = follower.update(detector.rgb, 0, 20, 1/30)
-        # 1.5 m/s² over 1/60 s adds 0.09 km/h; 1/30 s adds 0.18.
-        self.assertAlmostEqual(first['diagnostics']['target_kmh'], .09)
-        self.assertAlmostEqual(second['diagnostics']['target_kmh'], .27)
+        # Daytime 3.0 m/s²: 1/60 s adds 0.18 km/h; 1/30 s adds 0.36.
+        self.assertAlmostEqual(first['diagnostics']['target_kmh'], .18)
+        self.assertAlmostEqual(second['diagnostics']['target_kmh'], .54)
 
-    def test_both_missing_brakes_and_has_no_fake_path(self):
+    def test_both_missing_after_warmup_requests_straight_search(self):
         _, result = self.ready(SyntheticDetector(left=False, right=False))
-        self.assertIsNone(result['trajectory'])
-        self.assertEqual(result['throttle'], 0)
-        self.assertGreater(result['brake'], .5)
+        np.testing.assert_allclose(result['trajectory'][:, 1], 0)
+        self.assertGreater(result['throttle'], 0)
+        self.assertEqual(result['brake'], 0)
+        self.assertEqual(result['diagnostics']['status'], 'NO LANES - STRAIGHT')
 
     def test_implausible_lane_width_brakes(self):
         _, result = self.ready(SyntheticDetector(width=6.0))
@@ -55,21 +56,36 @@ class LaneFollowingTests(unittest.TestCase):
         _, result = self.ready(SyntheticDetector(left=False), speed=1, target=8)
         self.assertEqual(result['diagnostics']['target_kmh'], 8)
 
-    def test_lost_lane_cannot_continue_using_previous_good_path(self):
+    def test_loss_without_pose_requests_vehicle_forward(self):
         detector = SyntheticDetector()
-        follower, good = self.ready(detector)
-        self.assertGreater(good['throttle'], 0)
-        detector.left[:]=0;detector.right[:]=0
+        follower, _ = self.ready(detector)
+        detector.left[:] = detector.right[:] = 0
         lost = follower.update(detector.rgb, 3, 20, 1/30)
-        self.assertIsNone(lost['trajectory'])
-        self.assertEqual(lost['throttle'],0)
-        self.assertGreater(lost['brake'],.5)
+        np.testing.assert_allclose(lost['trajectory'][:, 1], 0)
+        self.assertGreater(lost['throttle'], 0)
+        self.assertEqual(lost['brake'], 0)
 
     def test_single_noisy_pixel_is_not_a_boundary(self):
         detector = SyntheticDetector(left=False,right=False)
         detector.right[10,10]=1
         _, result=self.ready(detector)
-        self.assertIsNone(result['trajectory'])
+        self.assertFalse(result['diagnostics']['left_valid'] or result['diagnostics']['right_valid'])
+
+    def test_blank_section_stays_straight_past_old_prediction_expiry(self):
+        detector = SyntheticDetector()
+        follower, _ = self.ready(detector)
+        follower.update(detector.rgb, 3, 20, 1/30, vehicle_pose=(0, 0, 0))
+        detector.left[:] = detector.right[:] = 0
+        for i in range(1, 31):
+            result = follower.update(detector.rgb, 3, 20, 1/30, vehicle_pose=(i * .1, 0, 0))
+            self.assertEqual(result['diagnostics']['status'], 'NO LANES - STRAIGHT')
+            self.assertGreater(result['throttle'], 0)
+            self.assertEqual(result['brake'], 0)
+        for i in range(31, 62):
+            result = follower.update(detector.rgb, 3, 20, 1/30, vehicle_pose=(i * .1, 0, 0))
+        np.testing.assert_allclose(result['trajectory'][:, 1], 0, atol=1e-10)
+        self.assertGreater(result['throttle'], 0)
+        self.assertEqual(result['brake'], 0)
 
     def test_no_target_never_changes_input_waypoints(self):
         points = np.column_stack((np.arange(-2.,60.),np.full(62,5.)))

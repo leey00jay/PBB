@@ -19,9 +19,9 @@ class LaneFollower:
         # Existing CARLA entry points set this from the spawned vehicle.
         self.control.max_steer_rad = value
 
-    def update(self, rgb, speed, desired_speed_kmh, dt):
-        observation = self.perception.observe(rgb)
-        plan = self.decision.plan(observation, desired_speed_kmh, dt=dt)
+    def update(self, rgb, speed, desired_speed_kmh, dt, vehicle_pose=None):
+        observation = self.perception.observe(rgb, vehicle_pose=vehicle_pose)
+        plan = self.decision.plan(observation, desired_speed_kmh, dt=dt, vehicle_pose=vehicle_pose)
         command = self.control.update(plan, speed, dt)
         diagnostics = {'status': command.status,
                        'target_kmh': command.target_kmh,

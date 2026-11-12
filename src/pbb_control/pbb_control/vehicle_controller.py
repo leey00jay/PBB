@@ -44,6 +44,19 @@ class VehicleController:
         throttle, brake, steer = 0.0, plan.stop_brake, self.previous_steer
         status, target_kmh = plan.status, plan.target_kmh
         if plan.drive_allowed and target_kmh > 0:
+            # Look closer in a bend so the controller follows its center rather
+            # than cutting across the long lookahead chord used on straights.
+            points = plan.trajectory
+            near = points[(points[:, 0] >= 2) & (points[:, 0] <= 15)]
+            curvature = 0.0
+            if len(near) >= 5:
+                curve = np.polynomial.Polynomial.fit(near[:, 0], near[:, 1], 2).convert()
+                curvature = float(np.max(np.abs(curve.deriv(2)(near[:, 0])) /
+                                         (1 + curve.deriv()(near[:, 0])**2)**1.5))
+            turning = curvature > .008
+            self.controller.K_dd = .55 if turning else .8
+            self.controller.min_lookahead = 4.5 if turning else 7.0
+            self.controller.max_lookahead = 8.0 if turning else 12.0
             angle = self.controller.get_control(plan.trajectory, speed)
             if self.controller.has_target:
                 wanted = float(np.clip(angle / self.max_steer_rad, -0.6, 0.6))

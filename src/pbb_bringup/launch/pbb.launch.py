@@ -10,6 +10,7 @@ from launch.actions import DeclareLaunchArgument, ExecuteProcess, LogInfo, Opaqu
 from launch.event_handlers import OnProcessExit
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+from pbb_carla.weather import WEATHER_PRESETS
 
 
 def _start(context):
@@ -19,6 +20,9 @@ def _start(context):
     timeout, command_timeout, speed = [float(config(name)) for name in ('startup_timeout', 'command_timeout', 'desired_speed_kmh')]
     if not all(math.isfinite(x) for x in (timeout, command_timeout, speed)) or min(timeout, command_timeout) <= 0 or speed < 0:
         raise RuntimeError('Invalid timeout or desired speed')
+    night_gamma = float(config('night_gamma'))
+    if not math.isfinite(night_gamma) or not .3 <= night_gamma <= 1.0:
+        raise RuntimeError('night_gamma must be between 0.3 and 1.0')
     if record and config('record_mode') == 'video' and not display:
         raise RuntimeError('Video recording requires display:=true; use record_mode:=all for headless data')
     if record and not drive:
@@ -54,7 +58,9 @@ def _start(context):
     actions = [supervise(server), server]
     if not drive:
         return actions
-    parameters = {'use_sim_time': True,
+    parameters = {'use_sim_time': True, 'weather': config('weather'),
+                  'night_enhancement': config('night_enhancement') == 'true',
+                  'night_gamma': night_gamma,
                   'desired_speed_kmh': speed, 'command_timeout': command_timeout, 'startup_timeout': timeout}
     roles = ['perception', 'decision', 'control', 'bridge'] + (['display'] if display else [])
     packages = {'perception': 'pbb_perception', 'decision': 'pbb_decision', 'control': 'pbb_control',
@@ -108,7 +114,12 @@ def generate_launch_description():
         DeclareLaunchArgument('record_mode', default_value='all', choices=['all', 'video'],
                               description='all: all 14 topics; video: screen, front image and clock'),
         DeclareLaunchArgument('bag_path', default_value='auto', description='New bag folder, or auto'),
-        DeclareLaunchArgument('desired_speed_kmh', default_value='80.0'),
+        DeclareLaunchArgument('weather', default_value='ClearNoon', choices=WEATHER_PRESETS,
+                              description='Day/night weather; night enables vehicle low beams (drive:=true)'),
+        DeclareLaunchArgument('desired_speed_kmh', default_value='60.0'),
+        DeclareLaunchArgument('night_enhancement', default_value='true', choices=['true', 'false']),
+        DeclareLaunchArgument('night_gamma', default_value='0.65',
+                              description='Night shadow lifting gamma, 0.3 to 1.0; lower is brighter'),
         DeclareLaunchArgument('startup_timeout', default_value='120.0'),
         DeclareLaunchArgument('command_timeout', default_value='5.0'),
         OpaqueFunction(function=_start),

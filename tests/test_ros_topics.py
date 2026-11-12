@@ -18,7 +18,7 @@ try:
     from std_msgs.msg import Header
     from builtin_interfaces.msg import Time
     from pbb_interfaces.msg import FrameState, LaneEstimate, VehicleControl
-    from pbb_common.ros import FrameJoin, image_array, image_message, valid_command, stop_command
+    from pbb_common.ros import FrameJoin, image_array, image_message, valid_command, stop_command, valid_state
     from pbb_common.wire import encode_lanes, decode_lanes
 except ImportError:
     ROS_AVAILABLE = False
@@ -56,12 +56,25 @@ class MessageTests(unittest.TestCase):
         from pbb_common.models import LaneObservation
         from numpy.polynomial import Polynomial
         poly = Polynomial.fit([4, 10, 20], [1.8, 2.0, 2.7], deg=2)
-        observation = LaneObservation(poly, None, np.empty((0, 0, 3), np.uint8))
+        observation = LaneObservation(poly, None, np.empty((0, 0, 3), np.uint8), 22.5, 0.,
+                                      centerline=poly+.15, centerline_extent_m=20.,
+                                      right_double_yellow=True)
         wire = encode_lanes(observation, self.state)
         restored = decode_lanes(deserialize_message(serialize_message(wire), LaneEstimate))
         samples = np.array([0, 5, 15, 25])
         np.testing.assert_allclose(restored.left(samples), poly(samples))
         self.assertIsNone(restored.right)
+        self.assertEqual(restored.left_extent_m, 22.5)
+        np.testing.assert_allclose(restored.centerline(samples),(poly+.15)(samples))
+        self.assertEqual(restored.centerline_extent_m,20.)
+        self.assertTrue(restored.right_double_yellow)
+        bad = copy.deepcopy(wire)
+        bad.centerline_coefficients = [float('nan')]
+        with self.assertRaises(ValueError):
+            decode_lanes(bad)
+        wire.left_extent_m = float('nan')
+        with self.assertRaises(ValueError):
+            decode_lanes(wire)
 
     def test_old_session_frame_and_invalid_controls_rejected(self):
         good = VehicleControl(state=self.state, throttle=0.3, brake=0.0, steer=0.1,
@@ -79,6 +92,16 @@ class MessageTests(unittest.TestCase):
         stopped = stop_command(self.state, 'COMMAND TIMEOUT - STOP')
         self.assertEqual((stopped.throttle, stopped.brake), (0.0, 1.0))
         self.assertTrue(valid_command(stopped, self.state))
+
+    def test_pose_survives_cdr_and_nonfinite_pose_is_rejected(self):
+        self.state.pose_x_m, self.state.pose_y_m, self.state.yaw_rad = 12.0, -7.0, .3
+        decoded = deserialize_message(serialize_message(self.state), FrameState)
+        self.assertEqual((decoded.pose_x_m, decoded.pose_y_m, decoded.yaw_rad), (12., -7., .3))
+        self.assertTrue(valid_state(decoded))
+        for field in ('pose_x_m', 'pose_y_m', 'yaw_rad'):
+            bad = copy.deepcopy(decoded)
+            setattr(bad, field, float('nan'))
+            self.assertFalse(valid_state(bad))
 
 
 @unittest.skipUnless(ROS_AVAILABLE, 'Requires sourced ROS workspace')
@@ -132,6 +155,28 @@ class TopicIntegrationTests(unittest.TestCase):
                 self.assertGreater(last.throttle, 0)
                 self.assertEqual(last.brake, 0.0)
                 self.assertEqual(last.state.session_id, 'dds-test')
+                # Blank paint with valid pose reaches the controller as a
+                # drivable prediction; a new simulator session cannot inherit it.
+                for frame, session in ((36, 'dds-test'), (37, 'dds-test'),
+                                       (38, 'dds-test'), (39, 'new-session')):
+                    state = FrameState(header=Header(stamp=Time(sec=frame)),
+                        session_id=session, frame=frame, speed_mps=0.0, dt=1/30, max_steer_rad=1.2)
+                    publisher.publish(LaneEstimate(state=state, right_double_yellow=frame == 37))
+                    deadline = time.monotonic() + 3
+                    while not any(m.state.frame == frame for m in received) and time.monotonic() < deadline:
+                        executor.spin_once(timeout_sec=.05)
+                    messages = [m for m in received if m.state.frame == frame]
+                    self.assertTrue(messages, f'No command for frame {frame}')
+                    if frame == 36:
+                        self.assertEqual(messages[-1].status, 'NO LANES - STRAIGHT')
+                        self.assertGreater(messages[-1].throttle, 0)
+                        self.assertEqual(messages[-1].brake, 0)
+                    elif frame in (37,38):
+                        self.assertEqual(messages[-1].status,'RIGHT DOUBLE YELLOW - STOP')
+                        self.assertEqual((messages[-1].throttle,messages[-1].brake),(0.,1.))
+                    else:
+                        self.assertEqual(messages[-1].throttle, 0)
+                        self.assertGreater(messages[-1].brake, .5)
             finally:
                 for process in processes:
                     if process.poll() is None:

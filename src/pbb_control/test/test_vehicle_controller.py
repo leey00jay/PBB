@@ -90,3 +90,25 @@ class VehicleControllerTests(unittest.TestCase):
             self.assertGreaterEqual(command.brake, 0)
             self.assertLessEqual(command.brake, .6)
             self.assertEqual(command.throttle * command.brake, 0)
+
+    def test_bicycle_follows_curved_center_and_straight_search_unwinds_steering(self):
+        controller = VehicleController()
+        radius, speed, dt = 40., 20/3.6, 1/30
+        x = y = yaw = 0.
+        errors = []
+        for _ in range(240):
+            angles = np.linspace(yaw-.15, yaw+1.0, 90)
+            world = np.column_stack((radius*np.sin(angles), radius*(1-np.cos(angles))))
+            delta = world - [x,y]
+            local = np.column_stack((np.cos(yaw)*delta[:,0]+np.sin(yaw)*delta[:,1],
+                                     -np.sin(yaw)*delta[:,0]+np.cos(yaw)*delta[:,1]))
+            command = controller.update(replace(plan(), trajectory=local), speed, dt)
+            self.assertEqual(command.brake, 0)
+            yaw += speed/2.65*np.tan(command.steer*controller.max_steer_rad)*dt
+            x += speed*np.cos(yaw)*dt
+            y += speed*np.sin(yaw)*dt
+            errors.append(abs(np.hypot(x,y-radius)-radius))
+        self.assertLess(max(errors), .6)
+        for _ in range(30):
+            straight = controller.update(replace(plan(), status='NO LANES - STRAIGHT'), speed, dt)
+        self.assertAlmostEqual(straight.steer, 0.)

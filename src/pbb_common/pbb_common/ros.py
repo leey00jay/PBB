@@ -61,7 +61,8 @@ class FrameJoin:
 
 def valid_state(state):
     return (bool(state.session_id) and state.frame > 0
-            and all(math.isfinite(v) for v in (state.speed_mps, state.dt, state.max_steer_rad))
+            and all(math.isfinite(v) for v in (state.speed_mps, state.dt, state.max_steer_rad,
+                                               state.pose_x_m, state.pose_y_m, state.yaw_rad))
             and state.speed_mps >= 0 and 0 < state.dt <= 1 and 0 < state.max_steer_rad <= math.pi)
 
 

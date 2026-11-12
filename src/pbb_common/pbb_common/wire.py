@@ -12,6 +12,19 @@ def encode_lanes(observation, state):
         valid = poly is not None and np.isfinite(poly.coef).all()
         setattr(msg, side + '_valid', bool(valid))
         setattr(msg, side + '_coefficients', poly.convert().coef.tolist() if valid else [])
+        extent = getattr(observation, side + '_extent_m') if valid else 0.0
+        if not np.isfinite(extent) or not 0 <= extent <= 60:
+            raise ValueError('Invalid observation extent')
+        setattr(msg, side + '_extent_m', float(extent))
+    if observation.centerline is not None:
+        coefficients = observation.centerline.convert().coef
+        if not 1 <= len(coefficients) <= 4 or not np.isfinite(coefficients).all():
+            raise ValueError('Invalid centerline polynomial')
+        msg.centerline_coefficients = coefficients.tolist()
+    if not np.isfinite(observation.centerline_extent_m) or not 0 <= observation.centerline_extent_m <= 60:
+        raise ValueError('Invalid centerline extent')
+    msg.centerline_extent_m = float(observation.centerline_extent_m)
+    msg.right_double_yellow = bool(observation.right_double_yellow)
     return msg
 
 
@@ -24,7 +37,18 @@ def decode_lanes(msg):
         if valid and (not 1 <= len(coefficients) <= 4 or not np.isfinite(coefficients).all()):
             raise ValueError('Invalid polynomial coefficients')
         curves.append(Polynomial(coefficients) if valid else None)
-    return LaneObservation(*curves, overlay=np.empty((0, 0, 3), dtype=np.uint8))
+    extents = [getattr(msg, side + '_extent_m') for side in ('left', 'right')]
+    if not np.isfinite(extents).all() or not all(0 <= x <= 60 for x in extents):
+        raise ValueError('Invalid observation extent')
+    median = msg.centerline_coefficients
+    if (len(median) > 4 or not np.isfinite(median).all()
+            or not np.isfinite(msg.centerline_extent_m) or not 0 <= msg.centerline_extent_m <= 60):
+        raise ValueError('Invalid centerline observation')
+    return LaneObservation(*curves, overlay=np.empty((0, 0, 3), dtype=np.uint8),
+                           left_extent_m=extents[0], right_extent_m=extents[1],
+                           centerline=Polynomial(median) if median else None,
+                           centerline_extent_m=msg.centerline_extent_m,
+                           right_double_yellow=msg.right_double_yellow)
 
 
 def encode_plan(plan, state):

@@ -10,6 +10,8 @@ import numpy as np
 import rclpy
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
+from rcl_interfaces.msg import ParameterDescriptor
+from pbb_carla.weather import make_weather
 from builtin_interfaces.msg import Time
 from std_msgs.msg import Header
 from sensor_msgs.msg import Image, CompressedImage
@@ -23,6 +25,11 @@ class Bridge(Node):
         super().__init__('pbb_bridge')
         self.declare_parameter('command_timeout', 5.0)
         self.declare_parameter('startup_timeout', 120.0)
+        self.weather_name = self.declare_parameter(
+            'weather', 'ClearNoon',
+            ParameterDescriptor(read_only=True, description='Weather at startup; restart to change')
+        ).value
+        self.weather = make_weather(self.weather_name)
         self.session = uuid.uuid4().hex
         self.actors = []
         self.world = self.original_settings = self.vehicle = None
@@ -50,12 +57,20 @@ class Bridge(Node):
         settings.fixed_delta_seconds = 1.0 / 30.0
         settings.no_rendering_mode = False
         self.world.apply_settings(settings)
-        self.world.set_weather(carla.WeatherParameters.ClearNoon)
+        self.world.set_weather(self.weather)
+        self.get_logger().info(
+            f'Weather: {self.weather_name}; rain={self.weather.precipitation:.0f}, '
+            f'puddles={self.weather.precipitation_deposits:.0f}, '
+            f'wetness={self.weather.wetness:.0f}, sun={self.weather.sun_altitude_angle:.0f} deg')
         blueprints = self.world.get_blueprint_library()
         vehicle_bp = blueprints.find('vehicle.audi.tt')
         vehicle_bp.set_attribute('color', '64,81,181')
         self.vehicle = self.world.spawn_actor(vehicle_bp, self.world.get_map().get_spawn_points()[21])
         self.actors.append(self.vehicle)
+        if self.weather.sun_altitude_angle < 0:
+            self.vehicle.set_light_state(carla.VehicleLightState(
+                carla.VehicleLightState.Position | carla.VehicleLightState.LowBeam))
+            self.get_logger().info('Night vehicle lights: position and low beam enabled.')
         self.vehicle.apply_control(carla.VehicleControl(brake=1.0))
         self.max_steer = math.radians(self.vehicle.get_physics_control().wheels[0].max_steer_angle)
         poses = {'left': (0.5, -0.6, 1.3, -5, -45), 'center': (0.5, 0, 1.3, -5, 0),
@@ -98,8 +113,11 @@ class Bridge(Node):
             snapshot = self.world.get_snapshot()
             stamp_ns = round(snapshot.timestamp.elapsed_seconds * 1e9)
             stamp = Time(sec=stamp_ns // 1_000_000_000, nanosec=stamp_ns % 1_000_000_000)
+            pose = self.vehicle.get_transform()
             state = FrameState(header=Header(stamp=stamp, frame_id='carla_vehicle'),
                                session_id=self.session, frame=frame,
+                               pose_x_m=pose.location.x, pose_y_m=pose.location.y,
+                               yaw_rad=math.radians(pose.rotation.yaw),
                                speed_mps=float(self.vehicle.get_velocity().length()), dt=1.0 / 30,
                                max_steer_rad=self.max_steer)
             self.expected, self.command = state, None

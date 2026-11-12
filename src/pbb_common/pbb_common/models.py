@@ -21,6 +21,13 @@ class LaneObservation:
     left: Optional[Polynomial]
     right: Optional[Polynomial]
     overlay: np.ndarray
+    # Farthest CURRENT image evidence, not the extrapolated polynomial range.
+    left_extent_m: float = 0.0
+    right_extent_m: float = 0.0
+    # Separate forbidden median; never treat its opposite side as our lane.
+    centerline: Optional[Polynomial] = None
+    centerline_extent_m: float = 0.0
+    right_double_yellow: bool = False
 
 
 @dataclass(frozen=True)
